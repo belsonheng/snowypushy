@@ -1,0 +1,25 @@
+# keeper security vault
+KEEPER_URL: ""
+KEEPER_NS: ""
+KEEPER_TOKEN: ""
+KEEPER_SECRET_PATH: ""
+KEEPER_PASSWORD_PATH: ""
+
+# snowflake configurations
+SF_ACCOUNT: ""
+SF_SVC_USER: ""
+SF_WH: ""
+SF_SCHEMA: ""
+SF_DB: ""
+SF_ROLE: ""
+SF_TABLE: ""
+
+# domo dataset information
+DOMO_CLIENT_ID: ""
+DOMO_CLIENT_SECRET: ""
+DATASET_ID: ""
+DATASET_NAME: ""
+DATASET_DESC: ""
+UPDATE_METHOD: "REPLACE" # "APPEND"
+DOWNLOAD_DIR: ""
+CHUNK_SIZE: 5000
