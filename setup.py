@@ -4,10 +4,11 @@ def readme():
     with open('README.md') as f:
         return f.read()
 
+# python setup.py sdist bdist_wheel
 setup(
     name='snowypushy',
     packages=find_packages(),
-    version='0.2',
+    version='0.2.2',
     description='Snowy helps us download and upload data across various data sources (e.g. Snowflake, Oracle, SAP Hana and Domo).',
     long_description=readme(),
     long_description_content_type='text/markdown',
