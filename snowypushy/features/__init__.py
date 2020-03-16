@@ -150,6 +150,8 @@ class App(object):
             if not os.path.exists(destination):
                 os.mkdir(destination)
             with open(destination + "metadata.json", "w") as file:
+                if not self.dataset_name:
+                    self.dataset_name = "{}.{}".format(schema, table)
                 json.dump({
                     "source": source,
                     "table": "{}.{}".format(schema, table),
@@ -182,10 +184,12 @@ class App(object):
         if destination == DataSource.DOMO:
             if not self.dataset_id:
                 # Create a new Dataset Schema
+                if not self.dataset_name:
+                    self.dataset_name = table
                 schema = dict(zip(columns, DataSource.convert_to_domo_types(source=data_source, types=types)))
                 dsr = DomoAPI(engine).create_dataset(
                     schema=Schema([Column(schema[col], col) for col in schema]),
-                    name=self.dataset_name if self.dataset_name else table,
+                    name=self.dataset_name,
                     description=self.dataset_desc
                 )
             else:

@@ -1,4 +1,5 @@
 import hvac
+import sys
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 

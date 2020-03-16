@@ -5,13 +5,13 @@ import datetime
 
 if __name__ == "__main__":
     start_time = perf_counter()
-    app = App(Configuration("sample.yml"))
+    app = App(Configuration("config.yml"))
 
     print("[SNOWFLAKE] Connecting to {}.{}".format(app.sf_schema, app.sf_table))
     snowflake = app.connect(source=app.DataSource.SNOWFLAKE)
     print("Writing data to {}:".format(app.download_dir))
     directory = app.download_csv(source=app.DataSource.SNOWFLAKE, engine=snowflake)
-    snowflake.close()
+    snowflake.close() # except Domo, other connectors need to be closed after usage
     print("[DOMO] Connecting to {} ({})".format(app.dataset_name, app.dataset_id if app.dataset_id else "NEW"))
     domo = app.connect(source=app.DataSource.DOMO)
     print("[DOMO] Uploading data to {} ({})".format(app.dataset_name, app.dataset_id if app.dataset_id else "NEW"))
