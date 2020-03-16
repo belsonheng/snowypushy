@@ -2,7 +2,8 @@ import yaml
 
 class Configuration(object):
     def __init__(self, file):
-        self._config = yaml.load(open(file), Loader=yaml.FullLoader)
+        with open(file) as configurations:
+            self._config = yaml.load(configurations, Loader=yaml.FullLoader)
 
     def get(self, property_name):
         if property_name not in self._config.keys():

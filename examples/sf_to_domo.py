@@ -5,7 +5,7 @@ import datetime
 
 if __name__ == "__main__":
     start_time = perf_counter()
-    app = App(Configuration("config.yml"))
+    app = App(Configuration("sample.yml"))
 
     print("[SNOWFLAKE] Connecting to {}.{}".format(app.sf_schema, app.sf_table))
     snowflake = app.connect(source=app.DataSource.SNOWFLAKE)

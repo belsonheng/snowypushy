@@ -7,7 +7,7 @@ def readme():
 setup(
     name='snowypushy',
     packages=find_packages(),
-    version='0.1',
+    version='0.2',
     description='Snowy helps us download and upload data across various data sources (e.g. Snowflake, Oracle, SAP Hana and Domo).',
     long_description=readme(),
     long_description_content_type='text/markdown',
