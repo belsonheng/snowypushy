@@ -14,6 +14,7 @@ setup(
     author='Belson Heng',
     author_email='belsonheng@hotmail.com',
     url='https://github.com/belsonheng/snowypushy',
+    download_url='https://github.com/belsonheng/snowypushy/archive/v0.2.tar.gz',
     keywords=['data', 'migration', 'snowflake', 'domo'],
     license='MIT',
     install_requires=[
