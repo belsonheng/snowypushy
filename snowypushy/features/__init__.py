@@ -81,6 +81,15 @@ class App(object):
             raise Exception("Unable to support provided data source: {}".format(source))
         return Database.connect(connection_string=con)
 
+    def merge_csv(self, source, filename):
+        try:
+            import glob
+            df = pd.concat([pd.read_csv(f) for f in glob.glob(source + "/*.csv")])
+            df.to_csv("{}/{}".format(source, filename), index=False)
+        except Exception as err:
+            print("Unable to merge CSV:")
+            sys.exit(err)
+            
     def download_csv(self, source, engine, **kwargs):
         try:
             destination = kwargs["destination"] if "destination" in kwargs else self.download_dir
@@ -169,6 +178,8 @@ class App(object):
                 for i, chunk in enumerate(chunks):
                     chunk.to_csv(f"{destination}/{i + 1}.csv", encoding="utf-8", index=False, header=True, mode="w")
                     pbar.update(len(chunk))
+            if "merge" in kwargs and kwargs["merge"]:
+                merge_csv(source, table)
             return destination
         except Exception as err:
             print("Unable to download CSV:")
@@ -216,7 +227,7 @@ class App(object):
                 import shutil
                 shutil.rmtree(source)
             if "merge" in kwargs and kwargs["merge"]:
-                pass
+                merge_csv(source, table)
             return results
         # elif destination == DataSource.HANA:
         #     pass
