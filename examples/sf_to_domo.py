@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     app.logger.info("[SNOWFLAKE] Connecting to {}.{}".format(app.sf_schema, app.sf_table))
     snowflake = app.connect(source=app.DataSource.SNOWFLAKE)
-    app.logger.info("Writing data to {}:".format(app.download_dir))
+    app.logger.info("Writing data to {}".format(app.download_dir))
     directory = app.download_csv(source=app.DataSource.SNOWFLAKE, engine=snowflake)
     snowflake.close() # except Domo, other connectors need to be closed after usage
     app.logger.info("[DOMO] Connecting to {} ({})".format(app.dataset_name, app.dataset_id if app.dataset_id else "NEW"))

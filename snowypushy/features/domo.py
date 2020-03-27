@@ -32,6 +32,9 @@ class DomoAPI(object):
     def get_dataset(self, dataset_id):
         return self.datasets.get(dataset_id)
 
+    def search_stream(self, dataset_name):
+        return self.streams.search("dataSource.name:" + dataset_name)
+
     def create_stream(self, dsr, update_method):
         sr = CreateStreamRequest(dsr, update_method)
         return self.streams.create(sr)

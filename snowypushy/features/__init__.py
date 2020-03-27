@@ -113,7 +113,9 @@ class App(object):
                     self.logger.info(dataset)
                     if not os.path.exists(destination):
                         os.mkdir(destination)
-                    domo.download_to_csv_file(self.dataset_id, destination + "data.csv")
+                    if not os.path.exists(destination + "parts"):
+                        os.mkdir(destination + "parts")
+                    domo.download_to_csv_file(self.dataset_id, destination + "parts/1.csv")
                     return destination
                 else:
                     self.logger.warning("Please provide Dataset ID in config file")
@@ -171,6 +173,8 @@ class App(object):
             columns = [{result[0]:result[1]} for result in results]
             if not os.path.exists(destination):
                 os.mkdir(destination)
+            if not os.path.exists(destination + "parts"):
+                os.mkdir(destination + "parts")
             with open(destination + "metadata.json", "w") as file:
                 if not self.dataset_name:
                     self.dataset_name = "{}.{}".format(schema, table)
@@ -188,7 +192,7 @@ class App(object):
             )
             with tqdm(total=self.total_records, unit="record") as pbar:
                 for i, chunk in enumerate(chunks):
-                    chunk.to_csv(f"{destination}/{i + 1}.csv", encoding="utf-8", index=False, header=True, mode="w")
+                    chunk.to_csv(f"{destination}/parts/{i + 1}.csv", encoding="utf-8", index=False, header=True, mode="w")
                     pbar.update(len(chunk))
             if "merge" in kwargs and kwargs["merge"]:
                 self.merge_csv(source, table)
@@ -204,30 +208,33 @@ class App(object):
             columns = list(data["columns"])
             types = list(data["types"])
         if destination == DataSource.DOMO:
+            domo = DomoAPI(self.logger, engine)
             if not self.dataset_id:
                 # Create a new Dataset Schema
                 if not self.dataset_name:
                     self.dataset_name = table
                 schema = dict(zip(columns, DataSource.convert_to_domo_types(source=data_source, types=types)))
-                dsr = DomoAPI(self.logger, engine).create_dataset(
+                dsr = domo.create_dataset(
                     schema=Schema([Column(schema[col], col) for col in schema]),
                     name=self.dataset_name,
                     description=self.dataset_desc
                 )
             else:
                 # Get existing Dataset Schema
-                dsr = DomoAPI(self.logger, engine).get_dataset(self.dataset_id)
+                dsr = domo.get_dataset(self.dataset_id)
+            # Search for existing Stream
+            streams = domo.search_stream(self.dataset_name)
             # Build a Stream Request
-            stream = DomoAPI(self.logger, engine).create_stream(dsr, self.update_method)
+            stream = streams[0] if streams else domo.create_stream(dsr, self.update_method)
             self.dataset_id = stream["dataSet"]["id"]
             self.logger.info(f"Stream created: {stream}")
             # Create an Execution
-            execution = DomoAPI(self.logger, engine).create_execution(stream)
+            execution = domo.create_execution(stream)
             self.logger.info(f"Execution created: {execution}")
             # Begin upload process
             results = DomoAPI(self.logger, engine, stream=stream, execution=execution).upload_to_domo(
                 mode=Mode.PARALLEL,
-                source=source,
+                source=source + "/parts",
                 columns=columns,
                 np_types=DataSource.convert_to_np_types(source=data_source, types=types),
                 date_columns=DataSource.select_date_columns(columns, types),
@@ -243,9 +250,9 @@ class App(object):
         else:
             self.logger.exception("Unable to support provided data destination: {}".format(destination))
             raise Exception("Unable to support provided data destination: {}".format(destination))
+        if "merge" in kwargs and kwargs["merge"]:
+            self.merge_csv(source, table)
         if "keep" in kwargs and not kwargs["keep"]:
             import shutil
             shutil.rmtree(source)
-        if "merge" in kwargs and kwargs["merge"]:
-            self.merge_csv(source, table)
         return results
