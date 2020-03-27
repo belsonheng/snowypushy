@@ -98,9 +98,8 @@ class App(object):
             import glob
             df = pd.concat([pd.read_csv(f) for f in glob.glob(source + "/*.csv")])
             df.to_csv("{}/{}".format(source, filename), index=False)
-        except Exception as err:
-            self.logger.exception("Unable to merge CSV: ", err)
-            raise Exception("Unable to merge CSV: " + err)
+        except Exception:
+            self.logger.exception("Unable to merge CSV")
 
     def download_csv(self, source, engine, **kwargs):
         try:
@@ -116,8 +115,8 @@ class App(object):
                     domo.download_to_csv_file(self.dataset_id, destination + "data.csv")
                     return destination
                 else:
-                    self.logger.warning("Please provide Dataset ID in config file.")
-                    raise Exception("Please provide Dataset ID in config file.")
+                    self.logger.warning("Please provide Dataset ID in config file")
+                    raise Exception("Please provide Dataset ID in config file")
             elif source == DataSource.HANA:
                 schema = self.hana_schema
                 table = self.hana_table
@@ -139,8 +138,8 @@ class App(object):
                         ORDER BY POSITION;
                     """.format(schema, view)
                 else:
-                    self.logger.warning("Please provide either Table Name or View Name in config file.")
-                    raise Exception("Please provide either Table Name or View Name in config file.")
+                    self.logger.warning("Please provide either Table Name or View Name in config file")
+                    raise Exception("Please provide either Table Name or View Name in config file")
             elif source == DataSource.ORACLE:
                 destination = destination + self.oracle_table + "/"
                 schema = self.oracle_schema
@@ -193,9 +192,8 @@ class App(object):
             if "merge" in kwargs and kwargs["merge"]:
                 merge_csv(source, table)
             return destination
-        except Exception as err:
-            self.logger.exception("Unable to download CSV: ", err)
-            raise Exception("Unable to download CSV: " + err)
+        except Exception:
+            self.logger.exception("Unable to download CSV")
 
     def upload_csv(self, source, destination, engine, **kwargs):
         with open(source + "/metadata.json") as file:
