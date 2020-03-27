@@ -13,7 +13,7 @@ logging.getLogger().addHandler(handler)
 
 if __name__ == "__main__":
     start_time = perf_counter()
-    app = App(Configuration("sample.yml"), logger_name="dev", log_level=logging.INFO)
+    app = App(Configuration("sample.yml"), logger_name="demo", log_level=logging.INFO)
 
     app.logger.info("[SNOWFLAKE] Connecting to {}.{}".format(app.sf_schema, app.sf_table))
     snowflake = app.connect(source=app.DataSource.SNOWFLAKE)

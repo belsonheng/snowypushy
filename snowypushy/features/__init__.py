@@ -96,6 +96,7 @@ class App(object):
     def merge_csv(self, source, filename):
         try:
             import glob
+            filename = filename + ".csv" if not ".csv" in filename else filename
             df = pd.concat([pd.read_csv(f) for f in glob.glob(source + "/*.csv")])
             df.to_csv("{}/{}".format(source, filename), index=False)
         except Exception:
@@ -190,7 +191,7 @@ class App(object):
                     chunk.to_csv(f"{destination}/{i + 1}.csv", encoding="utf-8", index=False, header=True, mode="w")
                     pbar.update(len(chunk))
             if "merge" in kwargs and kwargs["merge"]:
-                merge_csv(source, table)
+                self.merge_csv(source, table)
             return destination
         except Exception:
             self.logger.exception("Unable to download CSV")
@@ -233,12 +234,6 @@ class App(object):
                 total_records=self.total_records,
                 chunk_size=self.chunk_size
             )
-            if "keep" in kwargs and not kwargs["keep"]:
-                import shutil
-                shutil.rmtree(source)
-            if "merge" in kwargs and kwargs["merge"]:
-                merge_csv(source, table)
-            return results
         # elif destination == DataSource.HANA:
         #     pass
         # elif destination == DataSource.ORACLE:
@@ -248,3 +243,9 @@ class App(object):
         else:
             self.logger.exception("Unable to support provided data destination: {}".format(destination))
             raise Exception("Unable to support provided data destination: {}".format(destination))
+        if "keep" in kwargs and not kwargs["keep"]:
+            import shutil
+            shutil.rmtree(source)
+        if "merge" in kwargs and kwargs["merge"]:
+            self.merge_csv(source, table)
+        return results
