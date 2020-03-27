@@ -1,9 +1,11 @@
 import hvac
-import sys
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 class Vault(object):
+    def __init__(self, logger):
+        self.logger = logger
+
     def open(self, **kwargs):
         try:
             # Connect to Keeper to collect secrets
@@ -20,6 +22,5 @@ class Vault(object):
                 encryption_algorithm = serialization.NoEncryption()
             )
             return {"password": password, "private_key": key}
-        except Exception as err:
-            print("Unable to open keeper vault:")
-            sys.exit(err)
+        except Exception:
+            self.logger.exception("Unable to open keeper vault")

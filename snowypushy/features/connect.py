@@ -1,4 +1,3 @@
-import sys
 from pydomo import Domo
 from sqlalchemy import create_engine
 
@@ -11,6 +10,6 @@ class Database:
                 kwargs["connection_string"],
                 connect_args = { "encoding":"UTF-8","nencoding": "UTF-8" }
             ).connect()
-        except Exception as err:
-            print("Unable to connect to database:")
-            sys.exit(err)
+        except Exception:
+            if "logger" in kwargs:
+                kwargs["logger"].exception("Unable to connect to database:")

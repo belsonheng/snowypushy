@@ -14,7 +14,8 @@ from concurrent.futures import as_completed
 from tqdm import tqdm
 
 class DomoAPI(object):
-    def __init__(self, domo, **kwargs):
+    def __init__(self, logger, domo, **kwargs):
+        self.logger = logger
         self.domo = domo
         self.datasets = domo.datasets
         self.streams = domo.streams
@@ -82,12 +83,12 @@ class DomoAPI(object):
                     died = [1 for result in results if "error" in result]
 
                     committed_execution = self.streams.commit_execution(self.stream["id"], self.execution["id"])
-                    print("Committed execution: {}".format(committed_execution))
+
+                    self.logger.info("Committed execution: {}".format(committed_execution))
                     self.streams.delete(self.stream["id"])
 
                     return { "messages": results, "n_completed": len(completed), "n_died": len(died) }
             else:
                 raise Exception("Mode: {} not supported.".format(mode))
-        except Exception as err:
-            print("Unable to parallel upload to Domo:")
-            sys.exit(err)
+        except Exception:
+            self.logger.exception("Unable to parallel upload to Domo")

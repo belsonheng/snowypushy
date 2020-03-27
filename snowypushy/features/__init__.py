@@ -6,11 +6,22 @@ from ..common.type import DataSource, Mode
 from pydomo.datasets import Schema, Column
 from tqdm import tqdm
 
-import json, os, sys
+import json, os
 import pandas as pd
 
+import logging
+
+parent_logger = logging.getLogger("snowypushy")
+parent_logger.setLevel(logging.WARNING)
+
 class App(object):
-    def __init__(self, config):
+    def __init__(self, config, **kwargs):
+        if "logger_name" in kwargs:
+            self.logger = parent_logger.getChild(kwargs["logger_name"])
+        else:
+            self.logger = parent_logger
+        if kwargs.get("log_level"):
+            self.logger.setLevel(kwargs["log_level"])
         self._config = config
         self.DataSource = DataSource
         self.download_dir = config.get("DOWNLOAD_DIR")
@@ -20,7 +31,7 @@ class App(object):
             self._sf_credentials = "{}:{}".format(config.get("SF_USER"), config.get("SF_PASSWORD"))
         else:
             if config.get("KEEPER_TOKEN"): # keeper vault
-                vault = Vault().open(
+                vault = Vault(self.logger).open(
                     keeper_url=config.get("KEEPER_URL"),
                     keeper_ns=config.get("KEEPER_NS"),
                     keeper_token=config.get("KEEPER_TOKEN"),
@@ -78,8 +89,9 @@ class App(object):
                 self._sf_options
             )
         else:
+            self.logger.exception("Unable to support provided data source: {}".format(source))
             raise Exception("Unable to support provided data source: {}".format(source))
-        return Database.connect(connection_string=con)
+        return Database.connect(connection_string=con, logger=self.logger)
 
     def merge_csv(self, source, filename):
         try:
@@ -87,23 +99,24 @@ class App(object):
             df = pd.concat([pd.read_csv(f) for f in glob.glob(source + "/*.csv")])
             df.to_csv("{}/{}".format(source, filename), index=False)
         except Exception as err:
-            print("Unable to merge CSV:")
-            sys.exit(err)
-            
+            self.logger.exception("Unable to merge CSV: ", err)
+            raise Exception("Unable to merge CSV: " + err)
+
     def download_csv(self, source, engine, **kwargs):
         try:
             destination = kwargs["destination"] if "destination" in kwargs else self.download_dir
             if source == DataSource.DOMO:
                 destination = destination + self.dataset_name + "/"
                 if self.dataset_id:
-                    domo = DomoAPI(engine)
+                    domo = DomoAPI(self.logger, engine)
                     dataset = domo.datasets.get(self.dataset_id)
-                    print(dataset)
+                    self.logger.info(dataset)
                     if not os.path.exists(destination):
                         os.mkdir(destination)
                     domo.download_to_csv_file(self.dataset_id, destination + "data.csv")
                     return destination
                 else:
+                    self.logger.warning("Please provide Dataset ID in config file.")
                     raise Exception("Please provide Dataset ID in config file.")
             elif source == DataSource.HANA:
                 schema = self.hana_schema
@@ -126,6 +139,7 @@ class App(object):
                         ORDER BY POSITION;
                     """.format(schema, view)
                 else:
+                    self.logger.warning("Please provide either Table Name or View Name in config file.")
                     raise Exception("Please provide either Table Name or View Name in config file.")
             elif source == DataSource.ORACLE:
                 destination = destination + self.oracle_table + "/"
@@ -149,13 +163,12 @@ class App(object):
                     ORDER BY ORDINAL_POSITION
                 """.format(table)
             else:
+                self.logger.warning("Unable to support provided data source: {}".format(source))
                 raise Exception("Unable to support provided data source: {}".format(source))
-
             self.total_records = engine.execute("SELECT COUNT(1) FROM {}.{}".format(schema, table)).fetchone()[0]
-            print("Total records: {}".format(self.total_records))
+            self.logger.info("Total records: {}".format(self.total_records))
             results = engine.execute(sql).fetchall()
             columns = [{result[0]:result[1]} for result in results]
-
             if not os.path.exists(destination):
                 os.mkdir(destination)
             with open(destination + "metadata.json", "w") as file:
@@ -167,8 +180,7 @@ class App(object):
                     "columns": [next(iter(column)) for column in columns],
                     "types": [column[next(iter(column))] for column in columns]
                 }, file, indent=4)
-
-            print("{} Columns: {}".format(len(columns), columns))
+            self.logger.info("{} Columns: {}".format(len(columns), columns))
             chunks = pd.read_sql(
                 sql="SELECT * FROM {}.{}".format(schema, table),
                 con=engine,
@@ -182,8 +194,8 @@ class App(object):
                 merge_csv(source, table)
             return destination
         except Exception as err:
-            print("Unable to download CSV:")
-            sys.exit(err)
+            self.logger.exception("Unable to download CSV: ", err)
+            raise Exception("Unable to download CSV: " + err)
 
     def upload_csv(self, source, destination, engine, **kwargs):
         with open(source + "/metadata.json") as file:
@@ -198,23 +210,23 @@ class App(object):
                 if not self.dataset_name:
                     self.dataset_name = table
                 schema = dict(zip(columns, DataSource.convert_to_domo_types(source=data_source, types=types)))
-                dsr = DomoAPI(engine).create_dataset(
+                dsr = DomoAPI(self.logger, engine).create_dataset(
                     schema=Schema([Column(schema[col], col) for col in schema]),
                     name=self.dataset_name,
                     description=self.dataset_desc
                 )
             else:
                 # Get existing Dataset Schema
-                dsr = DomoAPI(engine).get_dataset(self.dataset_id)
+                dsr = DomoAPI(self.logger, engine).get_dataset(self.dataset_id)
             # Build a Stream Request
-            stream = DomoAPI(engine).create_stream(dsr, self.update_method)
+            stream = DomoAPI(self.logger, engine).create_stream(dsr, self.update_method)
             self.dataset_id = stream["dataSet"]["id"]
-            print(f"Stream created: {stream}")
+            self.logger.info(f"Stream created: {stream}")
             # Create an Execution
-            execution = DomoAPI(engine).create_execution(stream)
-            print(f"Execution created: {execution}")
+            execution = DomoAPI(self.logger, engine).create_execution(stream)
+            self.logger.info(f"Execution created: {execution}")
             # Begin upload process
-            results = DomoAPI(engine, stream=stream, execution=execution).upload_to_domo(
+            results = DomoAPI(self.logger, engine, stream=stream, execution=execution).upload_to_domo(
                 mode=Mode.PARALLEL,
                 source=source,
                 columns=columns,
@@ -236,4 +248,5 @@ class App(object):
         # elif destination == DataSource.SNOWFLAKE:
         #     pass
         else:
+            self.logger.exception("Unable to support provided data destination: {}".format(destination))
             raise Exception("Unable to support provided data destination: {}".format(destination))
