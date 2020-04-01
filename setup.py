@@ -8,14 +8,14 @@ def readme():
 setup(
     name='snowypushy',
     packages=find_packages(),
-    version='0.3.6',
+    version='0.3.7',
     description='Snowy helps us download and upload data across various data sources (e.g. Snowflake, Oracle, SAP Hana and Domo).',
     long_description=readme(),
     long_description_content_type='text/markdown',
     author='Belson Heng',
     author_email='belsonheng@hotmail.com',
     url='https://github.com/belsonheng/snowypushy',
-    download_url='https://github.com/belsonheng/snowypushy/archive/v0.3.6.tar.gz',
+    download_url='https://github.com/belsonheng/snowypushy/archive/v0.3.7.tar.gz',
     keywords=['data', 'migration', 'snowflake', 'domo'],
     license='MIT',
     install_requires=[

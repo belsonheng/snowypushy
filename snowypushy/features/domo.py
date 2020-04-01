@@ -58,13 +58,13 @@ class DomoAPI(object):
     def upload_to_domo(self, mode, source, columns, np_types, date_columns, total_records, **kwargs):
         try:
             chunk_size = kwargs["chunk_size"] if "chunk_size" in kwargs else 1024
+            jobs, results = [], []
+            total_files = 1 if kwargs["part"] else len(glob.glob(f"{source}/*.csv"))
             if mode == Mode.PARALLEL:
                 with ThreadPoolExecutor() as pool:
-                    jobs, results = [], []
-                    total_files = len(glob.glob(f"{source}/*.csv"))
                     for i in range(total_files):
                         data = pd.read_csv(
-                            f"{source}/{i + 1}.csv",
+                            "{}/{}.csv".format(source, kwargs["part"] if kwargs["part"] else i + 1),
                             header=0,
                             names=columns,
                             encoding="utf-8",

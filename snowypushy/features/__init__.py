@@ -181,6 +181,7 @@ class App(object):
                 json.dump({
                     "source": source,
                     "table": "{}.{}".format(schema, table),
+                    "rows": int(self.total_records),
                     "columns": [next(iter(column)) for column in columns],
                     "types": [column[next(iter(column))] for column in columns]
                 }, file, indent=4)
@@ -205,6 +206,7 @@ class App(object):
             data = json.load(file)
             data_source = data["source"]
             table = data["table"]
+            rows = data["rows"]
             columns = list(data["columns"])
             types = list(data["types"])
         if destination == DataSource.DOMO:
@@ -225,21 +227,23 @@ class App(object):
             # Search for existing Stream
             streams = domo.search_stream(self.dataset_name)
             # Build a Stream Request
-            stream = streams[0] if streams else domo.create_stream(dsr, self.update_method)
-            self.dataset_id = stream["dataSet"]["id"]
-            self.logger.info(f"Stream created: {stream}")
+            update_method = "APPEND" if "part" in kwargs else self.update_method
+            domo.stream = streams[0] if streams else domo.create_stream(dsr, update_method)
+            self.dataset_id = domo.stream["dataSet"]["id"]
+            self.logger.info(f"Stream created: {domo.stream}")
             # Create an Execution
-            execution = domo.create_execution(stream)
-            self.logger.info(f"Execution created: {execution}")
+            domo.execution = domo.create_execution(domo.stream)
+            self.logger.info(f"Execution created: {domo.execution}")
             # Begin upload process
-            results = DomoAPI(self.logger, engine, stream=stream, execution=execution).upload_to_domo(
+            results = domo.upload_to_domo(
                 mode=Mode.PARALLEL,
                 source=source + "/parts",
                 columns=columns,
                 np_types=DataSource.convert_to_np_types(source=data_source, types=types),
                 date_columns=DataSource.select_date_columns(columns, types),
-                total_records=self.total_records,
-                chunk_size=self.chunk_size
+                total_records=self.chunk_size if "part" in kwargs else rows,
+                chunk_size=self.chunk_size,
+                part=kwargs["part"] if "part" in kwargs else None
             )
         # elif destination == DataSource.HANA:
         #     pass
