@@ -1,6 +1,7 @@
 from .hvac import Vault
 from .connect import Database
 from .domo import DomoAPI
+from .snowflake import SnowflakeAPI
 from ..common.type import DataSource, Mode
 
 from pydomo.datasets import Schema, Column
@@ -235,7 +236,7 @@ class App(object):
             domo.execution = domo.create_execution(domo.stream)
             self.logger.info(f"Execution created: {domo.execution}")
             # Begin upload process
-            results = domo.upload_to_domo(
+            results = domo.upload(
                 mode=Mode.PARALLEL,
                 source=source + "/parts",
                 columns=columns,
@@ -249,8 +250,18 @@ class App(object):
         #     pass
         # elif destination == DataSource.ORACLE:
         #     pass
-        # elif destination == DataSource.SNOWFLAKE:
-        #     pass
+        elif destination == DataSource.SNOWFLAKE:
+            snowflake = SnowflakeAPI(self.logger, engine, self.sf_schema, self.sf_table)
+            results = snowflake.upload(
+                mode=Mode.SEQUENTIAL,
+                source=source + "/parts",
+                columns=columns,
+                np_types=DataSource.convert_to_np_types(source=data_source, types=types),
+                date_columns=DataSource.select_date_columns(columns, types),
+                total_records=self.chunk_size if "part" in kwargs else rows,
+                chunk_size=self.chunk_size,
+                part=kwargs["part"] if "part" in kwargs else None
+            )
         else:
             self.logger.exception("Unable to support provided data destination: {}".format(destination))
             raise Exception("Unable to support provided data destination: {}".format(destination))
