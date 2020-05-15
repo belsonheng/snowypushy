@@ -55,7 +55,7 @@ class DomoAPI(object):
         except Exception as err:
             return f"Part {part_id} upload met with unexpected error: {err}"
 
-    def upload_to_domo(self, mode, source, columns, np_types, date_columns, total_records, **kwargs):
+    def upload(self, mode, source, columns, np_types, date_columns, total_records, **kwargs):
         try:
             chunk_size = kwargs["chunk_size"] if "chunk_size" in kwargs else 1024
             jobs, results = [], []
