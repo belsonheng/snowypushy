@@ -153,6 +153,7 @@ class App(object):
                     FROM ALL_TAB_COLS
                     WHERE OWNER='{}'
                     AND TABLE_NAME='{}'
+                    AND HIDDEN_COLUMN='NO'
                     ORDER BY INTERNAL_COLUMN_ID
                 """.format(schema, table)
             elif source == DataSource.SNOWFLAKE:
