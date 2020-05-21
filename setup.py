@@ -22,11 +22,12 @@ setup(
         'hvac==0.9.6',
         'cryptography==2.8',
         'mock==2.0',
+        'cx-Oracle==7.0.0'
         'snowflake-sqlalchemy==1.2.0',
         'SQLAlchemy==1.3.7',
         'pandas==0.25.1',
         'numpy==1.16.4',
-        'PyYAML==5.1.2',
+        'PyYAML>=5.1.2',
         'pydomo==0.2.3',
         'tqdm==4.36.1',
         'idna==2.8'
