@@ -98,7 +98,7 @@ class App(object):
         try:
             import glob
             filename = filename + ".csv" if not ".csv" in filename else filename
-            df = pd.concat([pd.read_csv(f) for f in glob.glob(source + "/*.csv")])
+            df = pd.concat([pd.read_csv(f) for f in glob.glob(source + "/parts/*.csv")])
             df.to_csv("{}/{}".format(source, filename), index=False)
         except Exception:
             self.logger.exception("Unable to merge CSV")
