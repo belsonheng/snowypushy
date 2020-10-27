@@ -20,7 +20,7 @@ setup(
     license='MIT',
     install_requires=[
         'hvac==0.9.6',
-        'cryptography==2.8',
+        'cryptography==3.2',
         'mock==2.0',
         'cffi==1.13',
         'cx-Oracle==7.0.0',
