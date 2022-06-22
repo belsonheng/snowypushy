@@ -27,7 +27,7 @@ setup(
         'snowflake-sqlalchemy==1.2.0',
         'SQLAlchemy==1.3.7',
         'pandas==0.25.1',
-        'numpy==1.16.4',
+        'numpy==1.22.0',
         'PyYAML>=5.1.2',
         'pydomo==0.2.3',
         'tqdm==4.36.1',
